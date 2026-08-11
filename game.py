@@ -1,6 +1,8 @@
 import sys
 from scripts.entities import PhysicsEntity
 from scripts.utils import load_image
+from scripts.utils import load_images
+from scripts.tilemap import Tilemap
 import pygame
 
 class Game:
@@ -12,32 +14,43 @@ class Game:
         pygame.display.set_caption("My PyGame Game")
         # Sets the resolution of the display
         self.window = pygame.display.set_mode((640, 480))
+        # Creates a second surface for rendering
+        # that scales up to create a pixel effect
+        # that makes a larger image by using half
+        # the resolution of the window surface.
+        self.display = pygame.Surface((320, 240))
+
         # Need a clock to run the game a certain amount of
         # frames per second since you do not want the game to
         # run super fast as fast as the CPU processor since pygame
         # runs on the CPU
         self.clock = pygame.time.Clock()
-        # Specifies the image position in a 2D coordinate plane
-        self.img_pos = [160, 260]
         # [-X (LEFT), +X (RIGHT)]
         self.movement = [False, False]
         # Load the image for the player
         self.assets = {
+            'decor': load_images('tiles/decor'),
+            'grass': load_images('tiles/grass'),
+            'large_decor': load_images('tiles/large_decor'),
+            'stone': load_images('tiles/stone'),
             'player': load_image('entities/player.png')
         }
-        # Player in physics engine
-        self.player = PhysicsEntity(self, 'player', (50, 50), (0, 15))
         
+        self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
+        
+        self.tilemap = Tilemap(self, tile_size=16)
 
     def run(self):
         # Main game loop
         while True:
             # Clears window by filling it with a sky background color
-            self.window.fill((14, 219, 248))
-            # Update the player position x and y values
-            self.player.update((self.movement[1] - self.movement[0], 0))
+            self.display.fill((14, 219, 248))
+            #
+            self.tilemap.render(self.display)
+            # Update the player position 2d coordinates
+            self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             # Render the player on the screen
-            self.player.render(self.window)
+            self.player.render(self.display)
             # Main way to get the events in the window 
             # such as keystrokes, mouse inputs, and more
             # OOP will be used in tutorial a lot
@@ -76,19 +89,27 @@ class Game:
                 # move if you want to add it.
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RIGHT:
-                        self.movementX[1] = True
+                        self.movement[1] = True
                     if event.key == pygame.K_LEFT:
-                        self.movementX[0] = True
+                        self.movement[0] = True
+                    if event.key == pygame.K_UP:
+                        self.player.velocity[1] = -3
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_RIGHT:
-                        self.movementX[1] = False
+                        self.movement[1] = False
                     if event.key == pygame.K_LEFT:
-                        self.movementX[0] = False
+                        self.movement[0] = False
             # The update() function allows the screen to be updated.
             # The screen will not update even if display is changed
             # if you do not call this function called .update()
             pygame.display.update()
-            # Clock.tick(6) forces the loop to run at 60 fps
+            # Scales the display surface to the same size as the window surface
+            # so that the images on screen appear larger giving a pixel effect
+            # to the game. It is important to use transform.scale(surface, tuple)
+            # to increase the size of the surface. Tuple can use any sizes but
+            # it's convienient to use get_size from the window surface here.
+            self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), (0,0))
+            # Clock.tick(60) forces the loop to run at 60 fps
             # It also returns the last time that the function
             # was last called from. This means that it basically
             # waits for 1/60th of a frame before continuing 

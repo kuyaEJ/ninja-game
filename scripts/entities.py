@@ -16,6 +16,7 @@ class PhysicsEntity:
         # And makes sure that each entity has it's own
         # reference to a list so that entities do not
         # have the same positions.
+        # Assume it's [x,y] where x is horzi and y is vert
         self.pos = list(pos)
         # Doesn't need to be converted into a list since
         # it will be an array in the arguments
@@ -24,12 +25,53 @@ class PhysicsEntity:
         # want the character to move when you want it to
         # have a temporary boost in movement
         self.velocity = [0, 0]
+        self.collisions = {'up':False, 'down':False, 'right':False, 'left':False}
 
-    def update(self, movement=(0, 0)):
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def update(self, tilemap, movement=(0, 0)):
+        self.collisions = {'up':False, 'down':False, 'right':False, 'left':False}
         frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
 
+
         self.pos[0] += frame_movement[0]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[0] > 0: # moving right
+                    # right edge of entity 
+                    # snaps to left edge of tile
+                    entity_rect.right = rect.left
+                    self.collisions['right'] = True
+                if frame_movement[0] < 0: # moving left
+                    # left edge of entity
+                    # snaps to right edge of tile
+                    entity_rect.left = rect.right
+                    self.collisions['left'] = True
+                self.pos[0] = entity_rect.x
+
         self.pos[1] += frame_movement[1]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[1] > 0: # moving down
+                    # bottom edge of entity 
+                    # snaps to top edge of tile
+                    entity_rect.bottom = rect.top
+                    self.collisions['down'] = True
+                if frame_movement[1] < 0: # moving up
+                    # top edge of entity
+                    # snaps to bottom edge of tile
+                    entity_rect.top = rect.bottom
+                    self.collisions['up'] = True
+                self.pos[1] = entity_rect.y
+
+        # Terminal velocity of 5 is max velocity you can reach
+        self.velocity[1] = min(5, self.velocity[1] + 0.1)
+
+        if self.collisions['down'] or self.collisions['up']:
+            self.velocity[1] = 0
 
     def render(self, surf):
-        surf.blit(self.game.assets('player'), self.pos)
+        surf.blit(self.game.assets['player'], self.pos)
