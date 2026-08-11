@@ -1,5 +1,6 @@
 import sys
-
+from scripts.entities import PhysicsEntity
+from scripts.utils import load_image
 import pygame
 
 class Game:
@@ -16,19 +17,16 @@ class Game:
         # run super fast as fast as the CPU processor since pygame
         # runs on the CPU
         self.clock = pygame.time.Clock()
-        # Loads a image into game using pygame built in library
-        self.img = pygame.image.load('data/images/clouds/cloud1.png')
-        # Create a collision area object rect
-        self.collision_area = pygame.Rect((50, 50), (300, 50))
-        # Sets the AlphaKey color as black color being transparent
-        self.img.set_colorkey((0, 0, 0))
         # Specifies the image position in a 2D coordinate plane
         self.img_pos = [160, 260]
-        # [UP, DOWN]
-        self.movementY = [False, False]
-        # [LEFT, RIGHT]
-        self.movementX = [False, False]
-
+        # [-X (LEFT), +X (RIGHT)]
+        self.movement = [False, False]
+        # Load the image for the player
+        self.assets = {
+            'player': load_image('entities/player.png')
+        }
+        # Player in physics engine
+        self.player = PhysicsEntity(self, 'player', (50, 50), (0, 15))
         
 
     def run(self):
@@ -36,51 +34,10 @@ class Game:
         while True:
             # Clears window by filling it with a sky background color
             self.window.fill((14, 219, 248))
-            # Create a Rect for the cloud with its 
-            # size and position being updated
-            img_r = pygame.Rect(*self.img_pos, *self.img.get_size())
-            # If the cloud rect collides with the
-            # collision_area rect then
-            # change the color of the collision 
-            # area to a different shade of blue
-            # else color the collision area blue 
-            # with some green.
-            if img_r.colliderect(self.collision_area):
-                pygame.draw.rect(self.window, (0, 100, 255), self.collision_area)
-            else:
-                pygame.draw.rect(self.window, (0, 50, 155), self.collision_area)
-            # Move image up or down in 2D coords
-            self.img_pos[1] += (self.movementY[1] - self.movementY[0]) * 5
-            # Move image left or right in 2D coords
-            self.img_pos[0] += (self.movementX[1] - self.movementX[0]) * 5
-            # Places an object on the screen, at certain 
-            # x,y coordinates. For reference in a 2D 
-            # coordinate the plane is defined as shown:
-            # Top left is 0,0 
-            # Top right is 1,0
-            # Top left is 0,1
-            # bottom right is 1,1
-            # Blit is just a memory copy copying some section
-            # of memory onto another surface and blit is the
-            # terminology for that.
-            # Notice I said surface.
-            # In pygame a surface is basically an image.
-            # The window itself has a surface which is the main
-            # one you render onto that's the screen that's
-            # a special type of surface but most surface
-            # surfaces are kind of like this image one where
-            # it's just an image in memory that doesn't 
-            # necessarily represent the screen or window.
-            # If you wanted you can actually blit the screen
-            # onto the image like so:
-            # self.image.blit(self.window, self.img_pos) bc
-            # they're both surfaces we dont have a reason to
-            # do that. U can blit any surface into another
-            # surface at a given location so you're just
-            # merging together different images. One way to
-            # think of it is making a collage of different
-            # images on the screen.
-            self.window.blit(self.img, self.img_pos)
+            # Update the player position x and y values
+            self.player.update((self.movement[1] - self.movement[0], 0))
+            # Render the player on the screen
+            self.player.render(self.window)
             # Main way to get the events in the window 
             # such as keystrokes, mouse inputs, and more
             # OOP will be used in tutorial a lot
@@ -118,19 +75,11 @@ class Game:
                 # by using K_w, K_a, K_s, K_d to
                 # move if you want to add it.
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.movementY[0] = True
-                    if event.key == pygame.K_DOWN:
-                        self.movementY[1] = True
                     if event.key == pygame.K_RIGHT:
                         self.movementX[1] = True
                     if event.key == pygame.K_LEFT:
                         self.movementX[0] = True
                 if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_UP:
-                        self.movementY[0] = False
-                    if event.key == pygame.K_DOWN:
-                        self.movementY[1] = False
                     if event.key == pygame.K_RIGHT:
                         self.movementX[1] = False
                     if event.key == pygame.K_LEFT:
