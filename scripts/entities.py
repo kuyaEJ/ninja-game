@@ -31,10 +31,16 @@ class PhysicsEntity:
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
     def update(self, tilemap, movement=(0, 0)):
+        # Resets collision dictionary every frame to make sure
+        # that it's always updating what tiles around the player
+        # are walkable on or collided on or not collided on
         self.collisions = {'up':False, 'down':False, 'right':False, 'left':False}
+        # calculates how much movement every frame is doing.
+        # If there's a velocity then it'll add to every
+        # frame where it's moving like a small push
         frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
-
-
+        # Updates the position of the entity with
+        # the calculated frame movement
         self.pos[0] += frame_movement[0]
         entity_rect = self.rect()
         for rect in tilemap.physics_rects_around(self.pos):
@@ -73,5 +79,5 @@ class PhysicsEntity:
         if self.collisions['down'] or self.collisions['up']:
             self.velocity[1] = 0
 
-    def render(self, surf):
-        surf.blit(self.game.assets['player'], self.pos)
+    def render(self, surf, offset=(0, 0)):
+        surf.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))

@@ -3,6 +3,7 @@ from scripts.entities import PhysicsEntity
 from scripts.utils import load_image
 from scripts.utils import load_images
 from scripts.tilemap import Tilemap
+from scripts.clouds import Clouds
 import pygame
 
 class Game:
@@ -33,24 +34,49 @@ class Game:
             'grass': load_images('tiles/grass'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone'),
-            'player': load_image('entities/player.png')
+            'player': load_image('entities/player.png'),
+            'background': load_image('background.png'),
+            'clouds': load_images('clouds')
         }
-        
+        self.clouds = Clouds(self.assets['clouds'], count=16)
         self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
         
         self.tilemap = Tilemap(self, tile_size=16)
+        # Camera in the top left
+        self.scroll = [0, 0]
 
     def run(self):
         # Main game loop
         while True:
             # Clears window by filling it with a sky background color
-            self.display.fill((14, 219, 248))
-            #
-            self.tilemap.render(self.display)
+            self.display.blit(self.assets['background'], (0,0))
+            # Places player on center of the screen
+            # takes 1/30 of distance from player before
+            # moving camera. Distance player is
+            # from camera makes camera catch up faster
+            # float not whole number
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
+            # Fixes the jittery issue when camera moves since
+            # the camera bounces a little using integers
+            # Note: Theoretically you can use subpixels to
+            # render the display more smoothly or subsampling.
+            # This means getting a large off screen surface 
+            # either 2x or 4x resolution of the WIDTH and 
+            # HEIGHT. Then blit the sprite at float coords
+            # (scaled up to that surface's size). Then
+            # smooth-scale the surface down to the display
+            # They were also using pygame.draw.circles
+            # (vector-like graphics) pygame.transform
+            # .smoothscale(surface, (WIDTH, HEIGHT), screen)
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            self.clouds.update()
+            self.clouds.render(self.display, offset=render_scroll)
+            self.tilemap.render(self.display, offset=render_scroll)
             # Update the player position 2d coordinates
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             # Render the player on the screen
-            self.player.render(self.display)
+            self.player.render(self.display, offset=render_scroll)
             # Main way to get the events in the window 
             # such as keystrokes, mouse inputs, and more
             # OOP will be used in tutorial a lot
@@ -102,6 +128,17 @@ class Game:
             # The update() function allows the screen to be updated.
             # The screen will not update even if display is changed
             # if you do not call this function called .update()
+            # Behaves like pygame.display.flip() with no arguments.
+            # Flip is used in double-buffered rendering with 
+            # pygame.DOUBLEBUFF swapping the back buffer with the
+            # front buffer. Works with software and hardware
+            # surfaces and with OpenGL it does buffer swap.
+            # Ideal with redrawing the whole screen every frame
+            # such as in most games with full-screen updates.
+            # Update() passes a list of rects or a rect and
+            # is most efficient for small areas of screen change,
+            # reducing amount of pixel data sent to the display.
+            # It cannot be used with OpenGL surfaces.
             pygame.display.update()
             # Scales the display surface to the same size as the window surface
             # so that the images on screen appear larger giving a pixel effect
