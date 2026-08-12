@@ -44,6 +44,9 @@ class PhysicsEntity:
         # Check if the action actually changed
         # if its set to something we dont have then
         # we want to find the new animation.
+        # Ensures that the animation is already set
+        # rather than checking each animation it just
+        # waits to be called before updating the anims
         if action != self.action:
             self.action = action
             self.animation = self.game.assets[self.type + '/' + self.action].copy()
@@ -94,10 +97,10 @@ class PhysicsEntity:
             self.flip = False
         if movement[0] < 0:
             self.flip = True
-
+    
         # Terminal velocity of 5 is max velocity you can reach
         self.velocity[1] = min(5, self.velocity[1] + 0.1)
-
+        # Stops movement when colliding with ceiling or floor
         if self.collisions['down'] or self.collisions['up']:
             self.velocity[1] = 0
 

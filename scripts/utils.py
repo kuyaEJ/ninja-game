@@ -36,7 +36,7 @@ class Animation:
     # passed by reference which helps to save memory
     def copy(self):
         return Animation(self.images, self.img_duration, self.loop)
-
+    # updates frame number to reset if it reaches the last frame and img_duration
     def update(self):
         if self.loop:
             self.frame = (self.frame + 1) % (self.img_duration * len(self.images))
