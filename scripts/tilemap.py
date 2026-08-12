@@ -55,9 +55,28 @@ class Tilemap:
         return rects
 
     def render(self, surf, offset=(0, 0)):
+        # Not optimized and isn't setup.
+        # The offgrid_tiles are empty so
+        # currently this doesn't do
+        # anything.
         for tile in self.offgrid_tiles:
             surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] - offset[0], tile['pos'][1] - offset[1]))
-
-        for loc in self.tilemap:
-            tile = self.tilemap[loc]
-            surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
+        # find top left tiles coordinates x position
+        # optimization for tile renders to work with big maps
+        # for infinite world might need offgrid tiles separated in a set of quads.
+        # Each quad could be a list of all the tiles in it like the tiles we
+        # have now except instead of mapping the for loop tiles to tilemap
+        # we map them to for i in range(10): 
+        # offgrid_tiles[] = {type, variant, pos, 
+        # loaded?idk fourth var he would put}. 
+        # need to map list of offgrid tiles to locations and sometimes quads
+        # would be 4 times larger than on grid tiles. But you can get away with
+        # a lot using on grid tiles before you need to start optimizing them
+        # so in this project the offgrid tiles are not optimized especially 
+        # since we're making the levels by hand and not with a autogenerator
+        for x in range(offset[0] // self.tile_size, (offset[0] + surf.get_width()) // self.tile_size + 1):
+            for y in range(offset[1] // self.tile_size, (offset[1] + surf.get_height()) // self.tile_size + 1):
+                loc = str(x) + ';' + str(y)
+                if loc in self.tilemap:
+                    tile = self.tilemap[loc]
+                    surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))

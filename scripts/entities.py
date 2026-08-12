@@ -26,9 +26,27 @@ class PhysicsEntity:
         # have a temporary boost in movement
         self.velocity = [0, 0]
         self.collisions = {'up':False, 'down':False, 'right':False, 'left':False}
+        #
+        #
+        self.action = ''
+        # Accounts for padding for animations that overflow
+        # outside hitboxes of the player since the Rect
+        # is smaller than the img
+        self.anim_offset = (-3, -3)
+        # Lets the player face right or left
+        self.flip = False
+        self.set_action('idle')
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def set_action(self, action):
+        # Check if the action actually changed
+        # if its set to something we dont have then
+        # we want to find the new animation.
+        if action != self.action:
+            self.action = action
+            self.animation = self.game.assets[self.type + '/' + self.action].copy()
 
     def update(self, tilemap, movement=(0, 0)):
         # Resets collision dictionary every frame to make sure
@@ -72,6 +90,10 @@ class PhysicsEntity:
                     entity_rect.top = rect.bottom
                     self.collisions['up'] = True
                 self.pos[1] = entity_rect.y
+        if movement[0] > 0:
+            self.flip = False
+        if movement[0] < 0:
+            self.flip = True
 
         # Terminal velocity of 5 is max velocity you can reach
         self.velocity[1] = min(5, self.velocity[1] + 0.1)
@@ -79,5 +101,32 @@ class PhysicsEntity:
         if self.collisions['down'] or self.collisions['up']:
             self.velocity[1] = 0
 
+        self.animation.update()
+
     def render(self, surf, offset=(0, 0)):
-        surf.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        # Flip image before rendering it
+        # .flip(img, xaxis, yaxis)
+        # xaxis set to true means facing left
+        # while false faces right
+        # And usually we don't have yaxis flipped
+        surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False), (self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
+
+
+class Player(PhysicsEntity):
+    def __init__(self, game, pos, size):
+        super().__init__(game, 'player', pos, size)
+        self.air_time = 0
+
+    def update(self, tilemap, movement=(0, 0)):
+        super().update(tilemap, movement=movement)
+
+        self.air_time += 1
+        if self.collisions['down']:
+            self.air_time = 0
+
+        if self.air_time > 4:
+            self.set_action('jump')
+        elif movement[0] != 0:
+            self.set_action('run')
+        else:
+            self.set_action('idle')

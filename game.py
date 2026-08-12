@@ -1,7 +1,6 @@
 import sys
-from scripts.entities import PhysicsEntity
-from scripts.utils import load_image
-from scripts.utils import load_images
+from scripts.entities import PhysicsEntity, Player
+from scripts.utils import load_image, load_images, Animation
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
 import pygame
@@ -36,10 +35,16 @@ class Game:
             'stone': load_images('tiles/stone'),
             'player': load_image('entities/player.png'),
             'background': load_image('background.png'),
-            'clouds': load_images('clouds')
+            'clouds': load_images('clouds'),
+            'player/idle': Animation(load_images('entities/player/idle'), img_dur=6),
+            'player/run': Animation(load_images('entities/player/run'), img_dur=4),
+            'player/jump': Animation(load_images('entities/player/jump'), img_dur=5),
+            'player/slide': Animation(load_images('entities/player/slide'), img_dur=5),
+            'player/wall_slide': Animation(load_images('entities/player/wall_slide'), img_dur=5),
         }
+        # References
         self.clouds = Clouds(self.assets['clouds'], count=16)
-        self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
+        self.player = Player(self, (50, 50), (8, 15))
         
         self.tilemap = Tilemap(self, tile_size=16)
         # Camera in the top left
@@ -70,8 +75,11 @@ class Game:
             # (vector-like graphics) pygame.transform
             # .smoothscale(surface, (WIDTH, HEIGHT), screen)
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            # Update and render clouds before the tilemap so
+            # that they appear in the background
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)
+            #
             self.tilemap.render(self.display, offset=render_scroll)
             # Update the player position 2d coordinates
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
