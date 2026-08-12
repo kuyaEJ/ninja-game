@@ -1,3 +1,4 @@
+import os
 import sys
 import math
 import random
@@ -57,7 +58,8 @@ class Game:
         self.player = Player(self, (50, 50), (8, 15))
         
         self.tilemap = Tilemap(self, tile_size=16)
-        self.load_level(0)
+        self.level = 0
+        self.load_level(self.level)
         self.screenshake = 0
 
 
@@ -83,6 +85,8 @@ class Game:
         # Camera in the top left
         self.scroll = [0, 0]
         self.dead = 0
+        # for circle open and close transition on death
+        self.transition = -30
         
 
     def run(self):
@@ -93,11 +97,21 @@ class Game:
 
             self.screenshake = max(0, self.screenshake - 1)
 
+            if not len(self.enemies):
+                self.transition += 1
+                if self.transition > 30:
+                    self.level = min(self.level + 1, len(os.listdir('data/maps')) - 1)
+                    self.load_level(self.level)
+            if self.transition < 0:
+                self.transition += 1
+
             # death count
             if self.dead:
                 self.dead += 1
+                if self.dead >= 10:
+                    self.transition = min(30, self.transition + 1)
                 if self.dead > 40:
-                    self.load_level(0)
+                    self.load_level(self.level)
 
             # Places player on center of the screen
             # takes 1/30 of distance from player before
@@ -233,6 +247,14 @@ class Game:
                         self.movement[1] = False
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
+
+            # * 8 to ensure circle expands to proper size of 180 = 30 * 8
+            if self.transition:
+                transition_surf = pygame.Surface(self.display.get_size())
+                pygame.draw.circle(transition_surf, (255, 255, 255), (self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+                transition_surf.set_colorkey((255, 255, 255))
+                self.display.blit(transition_surf, (0, 0))
+
             # The update() function allows the screen to be updated.
             # The screen will not update even if display is changed
             # if you do not call this function called .update()
