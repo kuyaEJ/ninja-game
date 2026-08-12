@@ -23,6 +23,7 @@ class Editor:
             'grass': load_images('tiles/grass'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone'),
+            'spawners': load_images('tiles/spawners'),
         }
         # References
         self.tilemap = Tilemap(self, tile_size=16)
@@ -79,7 +80,7 @@ class Editor:
                         self.tilemap.offgrid_tiles.remove(tile)
 
             self.display.blit(current_tile_img, (5, 5))
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
