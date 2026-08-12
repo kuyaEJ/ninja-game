@@ -58,6 +58,7 @@ class Game:
         
         self.tilemap = Tilemap(self, tile_size=16)
         self.load_level(0)
+        self.screenshake = 0
 
 
 
@@ -72,6 +73,7 @@ class Game:
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
                 self.player.pos = spawner['pos']
+                self.player.air_time = 0
             else:
                 self.enemies.append(Enemy(self, spawner['pos'], (8,15)))
         self.projectiles = []
@@ -88,6 +90,9 @@ class Game:
         while True:
             # Clears window by filling it with a sky background color
             self.display.blit(self.assets['background'], (0, 0))
+
+            self.screenshake = max(0, self.screenshake - 1)
+
             # death count
             if self.dead:
                 self.dead += 1
@@ -156,6 +161,7 @@ class Game:
                     if self.player.rect().collidepoint(projectile[0]):
                         self.projectiles.remove(projectile)
                         self.dead += 1
+                        self.screenshake = max(16, self.screenshake)
                         for i in range(30):
                             angle = random.random() * math.pi * 2
                             speed = random.random() * 5
@@ -242,12 +248,16 @@ class Game:
             # reducing amount of pixel data sent to the display.
             # It cannot be used with OpenGL surfaces.
             pygame.display.update()
+            # for screenshake you can modify the camera scroll value so it moves suddenly
+            # the other technique is to change the number of the window blit position so
+            # that it shakes
+            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
             # Scales the display surface to the same size as the window surface
             # so that the images on screen appear larger giving a pixel effect
             # to the game. It is important to use transform.scale(surface, tuple)
             # to increase the size of the surface. Tuple can use any sizes but
             # it's convienient to use get_size from the window surface here.
-            self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), (0,0))
+            self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screenshake_offset)
             # Clock.tick(60) forces the loop to run at 60 fps
             # It also returns the last time that the function
             # was last called from. This means that it basically
@@ -261,6 +271,5 @@ class Game:
             # game in order to adjust to each monitor setting and
             # enable or disable certain settings.
             self.clock.tick(60)
-
 
 Game().run()
